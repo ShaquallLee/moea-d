@@ -69,7 +69,7 @@ class HyperVolume(Metric):
 
         def weakly_dominates(point, other):
             for i in range(len(point)):
-                if point[i] < other[i]:
+                if point[i] > other[i]:
                     return False
             return True
 

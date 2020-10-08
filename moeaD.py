@@ -52,7 +52,7 @@ class MOEAD():
         self.ideal_point = []
         self.ideal_fitness = []
 
-    def run(self, hv):
+    def run(self, hv=None):
         # 初始化
         self.init_vector()
         print('权重初始化成功')
@@ -60,7 +60,7 @@ class MOEAD():
         print('邻居初始化成功')
         self.init_pop()
         print('种群初始化成功')
-        print('hyper volume is ', hv.compute(self.pop))
+        # print('hyper volume is ', hv.compute(self.pop))
 
         # 进化更新
         # for gene in range(self.max_generation):
@@ -74,7 +74,7 @@ class MOEAD():
                 fit = self.update_reference(child)
                 #update of neighborhoods,由于当前i是i最近的元素，距离为0，故也在下面函数中更新
                 self.update_problem(child, fit, i)
-            print('hyper volume is ', -hv.compute(self.pop))
+            # print('hyper volume is ', hv.compute(self.pop))
             gene += 1
         print('结束')
 
@@ -283,8 +283,7 @@ class MOEAD():
 if __name__ == '__main__':
     # pf = get_pflist('../pf_files/n10000/DTLZ1.txt')
     model = MOEAD()
-    hv = HyperVolume(reference_point=[0.17,0.17,0.16])
-    model.run(hv)
+    model.run()
     x = []
     y = []
     z = []
@@ -293,7 +292,8 @@ if __name__ == '__main__':
         x.append(xx)
         y.append(yy)
         z.append(zz)
-    hv_score = -hv.compute(model.pop)
+    hv = HyperVolume(reference_point=[1.1,1.1,1.1])
+    hv_score = hv.compute(model.pop)
     print('hyper volume is {}'.format(hv_score))
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
