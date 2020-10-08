@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from utils.hypervolume import HyperVolume
 from utils.pfget import get_pflist
+from utils.igd import get_igd
 
 # 总共跑多少次
 total_run = 1
@@ -25,7 +26,7 @@ class MOEAD():
         # 每次最大迭代的次数
         self.max_generation = 100
         # 每次最大计算fitness次数
-        self.max_count_fitness = 300000
+        self.max_count_fitness = 200000
         self.count_fitness = 0
         # 计算邻居个数
         self.max_neighborhood_size = 20
@@ -281,20 +282,25 @@ class MOEAD():
 
 
 if __name__ == '__main__':
-    # pf = get_pflist('../pf_files/n10000/DTLZ1.txt')
+    pf = get_pflist('./pf_files/n10000/DTLZ1.txt')
     model = MOEAD()
     model.run()
     x = []
     y = []
     z = []
+    pops = []
     for p in model.pop:
         xx, yy, zz = p.pop_fitness
+        pops.append(p.pop_fitness)
         x.append(xx)
         y.append(yy)
         z.append(zz)
     hv = HyperVolume(reference_point=[1.1,1.1,1.1])
     hv_score = hv.compute(model.pop)
+    # pf = get_pflist('./pf_files/3ture pareto/paretoDTLZ1.dat')
+    igd = get_igd(pf, pops)
     print('hyper volume is {}'.format(hv_score))
+    print('inverted generational distance is {}'.format(igd))
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
     ax.scatter(x, y, z)
