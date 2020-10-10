@@ -6,7 +6,7 @@
 # @desc:MOEA/D算法实现
 import math
 
-from pymop.problems.dtlz import DTLZ1
+from pymop.problems.dtlz import DTLZ1, DTLZ2, DTLZ3, DTLZ4, DTLZ5, DTLZ6, DTLZ7
 import numpy as np
 import copy
 import random
@@ -16,13 +16,16 @@ from mpl_toolkits.mplot3d import Axes3D
 from utils.hypervolume import HyperVolume
 from utils.pfget import get_pflist
 from utils.igd import get_igd
+from utils.referencePoint import get_referencepoint
 
 # 总共跑多少次
 total_run = 1
 EPS = 1.2e-7
+problems = [DTLZ1,DTLZ2,DTLZ3,DTLZ4,DTLZ5,DTLZ6,DTLZ7]
+problem_id = 0
 
 class MOEAD():
-    def __init__(self, pf=None):
+    def __init__(self,pf=None, problem=DTLZ1):
         # 每次最大迭代的次数
         self.max_generation = 100
         # 每次最大计算fitness次数
@@ -34,7 +37,7 @@ class MOEAD():
         # 问题变量的维度
         self.n_var = 10
         # 需要解决的问题
-        self.problem = DTLZ1(self.n_var)
+        self.problem = problem(self.n_var)
         # 多目标问题的个数
         self.n_obj = self.problem.n_obj
         # 目标函数变量取值上下界
@@ -53,6 +56,9 @@ class MOEAD():
         self.ideal_point = []
         self.ideal_fitness = []
 
+        # 边界点
+        self.boundary_point = [-1, -1, -1]
+
     def run(self, hv=None):
         # 初始化
         self.init_vector()
@@ -67,7 +73,7 @@ class MOEAD():
         # for gene in range(self.max_generation):
         gene = 1
         while self.count_fitness < self.max_count_fitness: #and gene < self.max_generation:
-            print('第{}代开始'.format(gene))
+            # print('第{}代开始'.format(gene))
             for i in range(self.vector_size):
                 child, _ = self.reproduction(i)
                 child = self.improvememt(child)
@@ -280,11 +286,63 @@ class MOEAD():
                 max_fun = feval
         return max_fun
 
+def problems_test():
+    '''
+    一系列函数的测试
+    :return:
+    '''
+    for id in range(len(problems)):
+        print('DTLZ{} starting……'.format(id))
+        problem_test(problem=problems[id])
 
-if __name__ == '__main__':
-    pf = get_pflist('./pf_files/n10000/DTLZ1.txt')
-    model = MOEAD()
+def problem_test(problem):
+    '''
+    使用单个问题测试MOEA/D
+    :param problem:
+    :return:
+    '''
+    model = MOEAD(problem=problem)
     model.run()
+    pops, x, y, z = extract_info(model)
+    pf = get_pflist('./pf_files/n10000/{}.txt'.format(model.problem.name()))
+    reference_point = get_referencepoint(pops)  # 获取参考点
+    hv = HyperVolume(reference_point=reference_point)   #计算超体积HV
+    hv_score = hv.compute(model.pop)
+    igd = get_igd(pf, pops) # 计算反世代距离IGD
+    print('hyper volume is {}'.format(hv_score))
+    print('inverted generational distance is {}'.format(igd))
+    draw_scatter3D(model.problem.name(), hv_score, igd, reference_point, x, y, z)
+
+
+def draw_scatter3D(pname, hv_score, igd, reference_point, x, y, z):
+    '''
+    画3D散点图
+    :param hv_score:
+    :param igd:
+    :param x:
+    :param y:
+    :param z:
+    :return:
+    '''
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(x, y, z)
+    x_r, y_r, z_r = reference_point
+    ax.scatter(x_r, y_r, z_r, c='r')
+    ax.set_xlabel('func1')
+    ax.set_ylabel('func2')
+    ax.set_zlabel('func3')
+    title = '{} pareto front\nHV:{}\nIGD:{}'.format(pname, hv_score, igd)
+    ax.set_title(title)
+    plt.show()
+
+
+def extract_info(model):
+    '''
+    从model运行结果中拿出后面要用的信息
+    :param model:
+    :return:
+    '''
     x = []
     y = []
     z = []
@@ -295,16 +353,8 @@ if __name__ == '__main__':
         x.append(xx)
         y.append(yy)
         z.append(zz)
-    hv = HyperVolume(reference_point=[1.1,1.1,1.1])
-    hv_score = hv.compute(model.pop)
-    # pf = get_pflist('./pf_files/3ture pareto/paretoDTLZ1.dat')
-    igd = get_igd(pf, pops)
-    print('hyper volume is {}'.format(hv_score))
-    print('inverted generational distance is {}'.format(igd))
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    ax.scatter(x, y, z)
-    ax.set_xlabel('func1')
-    ax.set_ylabel('func2')
-    ax.set_zlabel('func3')
-    plt.show()
+    return pops, x, y, z
+
+
+if __name__ == '__main__':
+    problem_test(DTLZ7)
